@@ -2,7 +2,7 @@
 1. [Description](README.md#Description)
 2. [Summary](README.md#Summary)
 3. [Requirements](README.md#Requirements)
-4. [Useage](README.md#Useage)
+4. [Usage](README.md#Useage)
 
 # Description
 This is the Insight Data Engineering Coding Challenge solution.
@@ -18,5 +18,5 @@ src/main.py drives the ConsumerNetwork class implemented in src/ConsumerNetwork.
 * timeit
 * sys
 
-# Useage
+# Usage
 `python3 ./src/main.py ./log_input/batch_log.json ./log_input/stream_log.json ./log_output/flagged_purchases.json`
