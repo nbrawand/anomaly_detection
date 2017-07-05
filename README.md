@@ -2,7 +2,7 @@
 1. [Description](README.md#Description)
 2. [Summary](README.md#Summary)
 3. [Requirements](README.md#Requirements)
-4. [Usage](README.md#Useage)
+4. [Usage](README.md#Usage)
 
 # Description
 This is the Insight Data Engineering Coding Challenge solution.
