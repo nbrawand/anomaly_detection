@@ -1,6 +1,5 @@
 import networkx as nx
 import json
-import abc
 import numpy as np
 #
 # ConsumerNetwork class
