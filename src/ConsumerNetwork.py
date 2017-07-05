@@ -1,35 +1,11 @@
 import networkx as nx
 import json
-import sys
 import abc
 import numpy as np
 #
-# This is the main script for the Insight Data Engineering Coding Challenge.
-#
-#
-# Usage:
-#
-#   python3 ./src/process_log.py ./log_input/batch_log.json ./log_input/stream_log.json ./log_output/flagged_purchases.json
-#
-#
-# Notes:
-#
-#   The variables 'T' and 'D' have been named numTrac and degrees respectively. (Variable
-#   names consisting of single letters normally leads to headaches.)
-#
-# todo:
-#   check timestamps are in correct order while reading
-#   check degrees greater than 0
-#   check cast from str to int for T and D
-#
+# ConsumerNetwork class
 #
 # Nicholas Brawand - nicholasbrawand@gmail.com
-
-# what you were doing:
-
-batchLog = sys.argv[1]
-streamLog = sys.argv[2]
-flaggedPurchases = sys.argv[3]
 
 
 class ConsumerNetwork:
@@ -50,12 +26,15 @@ class ConsumerNetwork:
         self.userData = {}
         self.degrees = int(header['D'])
         self.numTrac = int(header['T'])
+        logFil.close()
 
         # read each line of batchLog and
-        # add the event to the this ConsumerNetwork
-        for line in logFil:
-            eventInfo = json.loads(line)
-            self.ProcessEvent(eventInfo)
+        # add the event to the this ConsumerNetwork dont look for naomaly
+        self.ProcessLogFile(
+            batchLog,
+            lookForAnomaly=False,
+            outFilName=None,
+            skipRows=1)
 
     def UserDataUpdate(self, id):
         """Add empty entry with id to consumerNetwork userData"""
@@ -85,28 +64,20 @@ class ConsumerNetwork:
     def PurchaseEvent(self, event, lookForAnomaly=False, outFil=None):
         """Update self.userData and self.network with new event purchase"""
 
-        # update userData with latest purchase
-        if len(self.userData[event['id']]) == self.numTrac:
-            self.userData[event['id']].pop(0)
-
-        self.userData[event['id']].append(float(event['amount']))
-
-
         # get list of neighbors
+        # to calculate statistics
         neighbors = set()
-
         if self.degrees > 0:
             neighbors = set(self.network.neighbors(event['id']))
 
-            # search through neighbor's neighbors up to 'self.degrees' times
+            # create neighbor list
             for i in range(1, self.degrees):
                 tmp = set(neighbors)
 
                 for neighbor in neighbors:
                     tmp = tmp.union(self.network.neighbors(neighbor))
 
-                # copy new tmp set but remove starting node (we only want
-                # neighbors)
+                # remove self from neighbor list
                 neighbors = set(tmp)-set(event['id'])
 
         # check for anomaly and update userData
@@ -115,7 +86,7 @@ class ConsumerNetwork:
         for neighbor in neighbors:
             networkPurchases = networkPurchases + self.userData[neighbor]
 
-        # check for anomaly
+        # check for anomaly and write to file
         if lookForAnomaly:
             if len(networkPurchases) > 1:
 
@@ -125,7 +96,12 @@ class ConsumerNetwork:
                 if float(event['amount']) > mean + (3.0 * std):
 
                     tmp = '"event_type":"{}", "timestamp":"{}", "id": "{}", "amount": "{}", '.format(
-                        event['event_type'], event['timestamp'], event['id'], event['amount'])+'"mean": "{0:.2f}", "sd": "{1:.2f}"'.format(mean, std)
+                        event['event_type'],
+                        event['timestamp'],
+                        event['id'],
+                        event['amount'])+'"mean": "{0:.2f}", "sd": "{1:.2f}"'.format(
+                        mean,
+                        std)
                     tmp = "{"+tmp+"}"
 
                     if not outFil is None:
@@ -133,6 +109,11 @@ class ConsumerNetwork:
                     else:
                         print(tmp)
 
+        # update userData with latest purchase
+        if len(self.userData[event['id']]) == self.numTrac:
+            self.userData[event['id']].pop(0)
+
+        self.userData[event['id']].append(float(event['amount']))
 
     def Befriend(self, event):
         """Update self.userData and self.network with new event befriend"""
@@ -142,8 +123,15 @@ class ConsumerNetwork:
         """Update self.userData and self.network with new event unfriend"""
         self.network.remove_edge(event['id1'], event['id2'])
 
-    def ProcessEvent(self, event, lookForAnomaly=False, outFil=None):
+    def ProcessEvent(self, eventLine, lookForAnomaly=False, outFil=None):
         """Update userData and network information from event"""
+
+        # skip if empty
+        if eventLine == '\n':
+            return
+
+        # load line into dict
+        event = json.loads(eventLine)
 
         # check if user exists, if not add them
         self.CheckAndAddUser(event)
@@ -163,31 +151,30 @@ class ConsumerNetwork:
         else:
             print('Warning unrecognized event: {}'.format(event['event_type']))
 
-    def ProcessLogFile(self, logFilName, lookForAnomaly=False, outFilName=None):
+    def ProcessLogFile(
+        self,
+        logFilName,
+        lookForAnomaly=False,
+        outFilName=None,
+     skipRows=0):
 
         logFil = open(logFilName, 'r')
 
+        # skip lines
+        for i in range(0, skipRows):
+            logFil.readline()
+
+        # open output file
         if not outFilName is None:
             outFil = open(outFilName, 'w')
 
-        # read each line of logFil and
-        # add the event to the ConsumerNetwork
-        for line in logFil:
-            eventInfo = json.loads(line)
-            if not outFilName is None:
+        # process all events in logFil
+        if not outFilName is None:
+            for line in logFil:
                 self.ProcessEvent(
-                    eventInfo,
+                    line,
                     lookForAnomaly=lookForAnomaly,
                     outFil=outFil)
-            else:
-                self.ProcessEvent(eventInfo, lookForAnomaly=lookForAnomaly)
-
-cs = ConsumerNetwork(batchLog)
-
-# process stream
-#cs.ProcessLogFile(streamLog, lookForAnomaly=True)
-cs.ProcessLogFile(streamLog, lookForAnomaly=True, outFilName=flaggedPurchases)
-
-
-#network, userData=cs.network, cs.userData
-#print(network.nodes(), network.edges(), userData)
+        else:
+            for line in logFil:
+                self.ProcessEvent(line, lookForAnomaly=lookForAnomaly)
