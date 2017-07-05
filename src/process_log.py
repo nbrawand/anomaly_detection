@@ -115,23 +115,23 @@ class ConsumerNetwork:
         for neighbor in neighbors:
             networkPurchases = networkPurchases + self.userData[neighbor]
 
-            # check for anomaly
-            if lookForAnomaly:
-                if len(networkPurchases) > 1:
+        # check for anomaly
+        if lookForAnomaly:
+            if len(networkPurchases) > 1:
 
-                    std = round(np.std(networkPurchases), 2)
-                    mean = round(np.mean(networkPurchases), 2)
+                std = round(np.std(networkPurchases), 2)
+                mean = round(np.mean(networkPurchases), 2)
 
-                    if float(event['amount']) > mean + (3.0 * std):
+                if float(event['amount']) > mean + (3.0 * std):
 
-                        tmp = '"event_type":"{}", "timestamp":"{}", "id": "{}", "amount": "{}", '.format(
-                            event['event_type'], event['timestamp'], event['id'], event['amount'])+'"mean": "{0:.2f}", "sd": "{1:.2f}"'.format(mean, std)
-                        tmp = "{"+tmp+"}"
+                    tmp = '"event_type":"{}", "timestamp":"{}", "id": "{}", "amount": "{}", '.format(
+                        event['event_type'], event['timestamp'], event['id'], event['amount'])+'"mean": "{0:.2f}", "sd": "{1:.2f}"'.format(mean, std)
+                    tmp = "{"+tmp+"}"
 
-                        if not outFil is None:
-                            outFil.write(tmp+'\n')
-                        else:
-                            print(tmp)
+                    if not outFil is None:
+                        outFil.write(tmp+'\n')
+                    else:
+                        print(tmp)
 
 
     def Befriend(self, event):
