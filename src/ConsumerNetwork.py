@@ -43,7 +43,7 @@ class ConsumerNetwork:
         """Check if users in event are in self.userData and self.network if not add them."""
 
         # make list of all 'id's in event
-        idList = [i for i in event.keys() if i in ['id', 'id1', 'id2']]
+        idList = set(event.keys()).intersection({'id', 'id1', 'id2'})
 
         for ID in idList:
 
