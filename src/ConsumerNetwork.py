@@ -42,23 +42,19 @@ class ConsumerNetwork:
     def CheckAndAddUser(self, event):
         """Check if users in event are in self.userData and self.network if not add them."""
 
-        try:
-            # if user is given by 'id' key
+        # make list of all 'id's in event
+        idList = [i for i in event.keys() if 'id' in i]
+
+        for ID in idList:
+
             # check self.userData
-            if not event['id'] in self.userData:
-                self.UserDataUpdate(event['id'])
+            if not event[ID] in self.userData:
+                self.UserDataUpdate(event[ID])
+
             # check self.network
-            if not event['id'] in self.network.nodes():
-                self.network.add_node(event['id'])
-        except:
-            # if users are given by 'id1' and 'id2' keys
-            for ID in ['id1', 'id2']:
-                # check self.userData
-                if not event[ID] in self.userData:
-                    self.UserDataUpdate(event[ID])
-                # check self.network
-                if not event[ID] in self.network.nodes():
-                    self.network.add_node(event[ID])
+            if not event[ID] in self.network.nodes():
+                self.network.add_node(event[ID])
+
 
     def PurchaseEvent(self, event, lookForAnomaly=False, outFil=None):
         """Update self.userData and self.network with new event purchase"""
